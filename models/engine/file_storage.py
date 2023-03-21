@@ -20,11 +20,18 @@ class FileStorage:
     __file_path = "file.json"
     __objects = {}
 
-    def all(self):
+    def all(self, cls=None):
         """
-        methon all of file storage
+        method all of file storage
         """
-        return FileStorage.__objects
+        if cls is None:
+            return FileStorage.__objects
+        else:
+            cls_objects = {}
+            for key, val in FileStorage.__objects.items():
+                if type(val) == cls:
+                    cls_objects[key] = val
+            return cls_objects
 
     def new(self, obj):
         """
@@ -55,3 +62,13 @@ class FileStorage:
                 other_dict = json.loads(q.read())
                 for key, val in other_dict.items():
                     self.new(my_dict[val['__class__']](**val))
+
+    def delete(self, obj=None):
+        """
+        Deletes obj from __objects if it's inside
+        """
+        if obj is not None:
+            key = "{}.{}".format(obj.__class__.__name__, obj.id)
+            if key in FileStorage.__objects:
+                del FileStorage.__objects[key]
+

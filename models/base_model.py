@@ -1,44 +1,54 @@
 #!/usr/bin/python3
-"""This module defines a base class for all models in our hbnb clone"""
+"""
+fun class base model do everuthing
+"""
 import uuid
 from datetime import datetime
+import models
 
 
 class BaseModel:
-    """A base class for all hbnb models"""
+    """
+    our code insert here
+    """
     def __init__(self, *args, **kwargs):
-        """Instatntiates a new model"""
+        """
+        constructor of base Model
+        """
         if not kwargs:
-            from models import storage
             self.id = str(uuid.uuid4())
             self.created_at = datetime.now()
             self.updated_at = datetime.now()
-            storage.new(self)
+            models.storage.new(self)
         else:
-            kwargs['updated_at'] = datetime.strptime(kwargs['updated_at'],
-                                                     '%Y-%m-%dT%H:%M:%S.%f')
-            kwargs['created_at'] = datetime.strptime(kwargs['created_at'],
-                                                     '%Y-%m-%dT%H:%M:%S.%f')
-            del kwargs['__class__']
-            self.__dict__.update(kwargs)
+            for key, val in kwargs.items():
+                if key == 'created_at' or key == 'updated_at':
+                    dataTime = "%Y-%m-%dT %H:%M:%S.%f"
+                    val = datetime.strptime(kwargs[key], dataTime)
+                if key != '__class__':
+                    setattr(self, key, val)
 
     def __str__(self):
-        """Returns a string representation of the instance"""
-        cls = (str(type(self)).split('.')[-1]).split('\'')[0]
-        return '[{}] ({}) {}'.format(cls, self.id, self.__dict__)
+        """
+        method for named
+        """
+        nameClass = self.__class__.__name__
+        return ("[{}] ({}) {}".format(nameClass, self.id, self.__dict__))
 
     def save(self):
-        """Updates updated_at with current time when instance is changed"""
-        from models import storage
+        """
+        method for save stuff
+        """
         self.updated_at = datetime.now()
-        storage.save()
+        models.storage.save()
 
     def to_dict(self):
-        """Convert instance into dict format"""
-        dictionary = {}
-        dictionary.update(self.__dict__)
-        dictionary.update({'__class__':
-                          (str(type(self)).split('.')[-1]).split('\'')[0]})
-        dictionary['created_at'] = self.created_at.isoformat()
-        dictionary['updated_at'] = self.updated_at.isoformat()
-        return dictionary
+        """
+        method for create a dict
+        """
+        new_dict = dict(self.__dict__)
+        new_dict["__class__"] = self.__class__.__name__
+        formatTime = "%Y-%m-%dT %H:%M:%S.%f"
+        new_dict["created_at"] = self.created_at.strftime(formatTime)
+        new_dict["updated_at"] = self.updated_at.strftime(formatTime)
+        return new_dict

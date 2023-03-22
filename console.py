@@ -1,169 +1,127 @@
 #!/usr/bin/python3
-"""
-fun console AirB&B proyect
-"""
+""" Console Module """
+import cmd
+import sys
 from models.base_model import BaseModel
-from models.engine.file_storage import FileStorage
-from models import storage
+from models.__init__ import storage
 from models.user import User
 from models.place import Place
 from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
-from models import theClasses
-import cmd
 
 
 class HBNBCommand(cmd.Cmd):
-    """
-    class HBNB for command lines
-    """
-    prompt = "(hbnb) "
+    """ Conatiains the functionality for the HBNBconsole"""
 
-    def emptyline(self):
-        """don't make nothing"""
-        pass
+    # determines prompt for interactive/non-interactive modes
+    prompt = '(hbnb) ' if sys.__stdin__.isatty() else ''
 
-    def do_create(self, args):
-        """creates a new instance"""
-        if len(args) == 0:
-            print("** class name missing **")
-            return
-        token = args.split()
+    classes = {
+               'BaseModel': BaseModel, 'User': User, 'Place': Place,
+               'State': State, 'City, 'Amenity': Amenity,
+               'Review': Review
+               }
+    dot_cmds = ['all', 'count', 'show', 'destroy', 'update']
+    types = {
+             'number_rooms': int, 'number_bathrooms': int,
+             'max_guest': int, 'price_by_night': int,
+             'latitude': float, ;longitude': float
+             }
 
-        try:
-            newInstance = eval(token[0])()
-            for i in range(1, len(token)):
-                param = token[i].split('=')
-                if len(param) != 2:
-                    continue
-                key = param[0].replace('_', ' ')
-                val = param[1]
-                if val[0] == '"' and val[-1] == '"':
-                    val = val[1:-1].replace('_', ' ').replace('\\"', '"')
-                elif '.' in val:
-                    try:
-                        val = float(val)
-                    except ValueError:
-                        continue
-                else:
-                    try:
-                        val = int(val)
-                    except ValueError:
-                        continue
-                setattr(newInstance, key, val)
-            newInstance.save()
-            print(newInstance.id)
-        except NameError:
-            print("** class doesn't exist **")
+    def preloop(self):
+        """Prints if isatty is false"""
+        if not sys.__stdin__.isatty():
+            print('(hbnb)')
 
-    def do_show(self, args):
-        """Prints the string representation of an instance"""
-        token = args.split()
+    def precmd(self, line):
+        """Reformat command line for advanced command syntax.
 
-        if len(token) == 0:
-            print("** class name missing **")
-            return
-        if len(token) == 1:
-            print("** instance id missing **")
-            return
-        try:
-            eval(token[0])
-        except NameError:
-            print("** class doesn't exist **")
+        Usage: <class name>.<command>([<id> [*args> or <**kwargs>]])
+        (Brackets denote iptional fields in usage example.)
+        """
+        _cmd = _cls = _id = _args = '' # initialize line elements
 
-        objDict = storage.all()
-        keyId = token[0] + "." + token[1]
+        # scan for general formatting - i.e '.', '(', ')'
+        if not ('.' in line and '(' in line and ')' in line):
+            return line
 
-        try:
-            value = objDict[keyId]
-            print(value)
-        except KeyError:
-            print("** no instance found **")
+        try: # parse line left to right
+            pline = line[:] # parsed line
 
-    def do_destroy(self, args):
-        """Deletes an instance based on the class name"""
-        token = args.split()
+            # isolate <class name>
+            _cls = pline[:pline.find('.')]
 
-        if len(args) == 0:
-            print("** class name missing **")
-            return
-        if token[1] == 0:
-            print("** instance id missing **")
+            # isolate and validate <command>
+            _cmd = pline[pline.find('.') + 1:pline.find('(')]
+            if _cmd not in HBNBCommand.dot_cmds:
+                raise Exception
 
-        try:
-            eval(token[0])
-        except NameError:
-            print("** class doesn't exist **")
-        objDict = storage.all()
-        keyId = token[0] + "." + token[1]
+            # if parantheses contain arguments, parse them
+            pline = pline[pline.find('(') + 1:pline.find(')')]
+            if pline:
+                # partition args: (<id>, [<delim>], [<*args>])
+                pline = pline.partition(', ') # pline convert to tuple
 
-        try:
-            del objDict[keyId]
-        except NameError:
-            print("** no instance found **")
-        storage.save()
+                # isolate _id, stripping quotes
+                _id = pliine[0].replace('\"', '')
+                # possible bug here:
+                # empty quotes register as empty _id when replaced
 
-    def do_all(self, arg):
-        """ Prints string represention of all instances of a given class """
-
-        if not arg:
-            print("** class name missing **")
-            return
-
-        token = arg.split()
-
-        if token[0] not in theClasses:
-            print("** class doesn't exist **")
-        else:
-            all_objs = storage.all()
-            newList = []
-
-            for key, val in all_objs.items():
-                ob_name = val.__class__.__name__
-                if ob_name == token[0]:
-                    newList += [val.__str__()]
-            print(newList)
-
-    def do_update(self, args):
-        """ Updates an instance based on the class name and id """
-
-        if not args:
-            print("** class name missing **")
-            return
-
-        token = args.split()
-
-        if token[0] not in theClasses:
-            print("** class doesn't exist **")
-        elif len(token) == 1:
-            print("** instance id missing **")
-        else:
-            all_objs = storage.all()
-            for key, val in all_objs.items():
-                ob_name = val.__class__.__name__
-                ob_id = val.id
-                if ob_name == token[0] and ob_id == token[1].strip('"'):
-                    if len(token) == 2:
-                        print("** attribute name missing **")
-                    elif len(token) == 3:
-                        print("** value missing **")
+                # if arguments exists beyond _id
+                pline = pline[2].strip() # pline is now str
+                if pline:
+                    # ckeck for *args or **kwargs
+                    if pline[0] == '{' and pline[-1] == '}'\
+                            and type(eval(pline)) is dict:
+                        _args = pline
                     else:
-                        setattr(val, token[2], token[3])
-                        storage.save()
-                    return
-            print("** no instance found **")
+                        _args = pline.replace(',', '')
+                        # _args = _args.replace('\"', '')
+                line = ' '.join([_cmd, _cls, _id, _args])
 
-    def do_EOF(self, args):
-        """end_of_file"""
-        return True
+            except Exception as mess:
+                pass
+            finally:
+                return line
 
-    def do_quit(self, args):
-        """Quit command to exit the program"""
-        return True
+        def postcmd(self, stop, line):
+            """Prints if isatty is false"""
+            if not sys.__stdin__.isatty():
+                print('hbnb) ', end='')
+            return stop
 
+        def do_quit(self, command):
+            """ Method to exit the HBNB console"""
+            exit()
 
-if __name__ == "__main__":
-    console = HBNBCommand()
-    console.cmdloop()
+        def help_quit(self):
+            """ Prints the help documentation for quit """
+            print("Exits the program with formatting\n")
+
+        def do_EOF(self, arg):
+            """ Handles WOF to exit program """
+            print()
+            exit()
+
+        def help_EOF(self):
+            """ Prints the help docum,entation for quit """
+            print("Exits the program without formatting\n")
+
+        def emptyline(self):
+            """ Overrides an object of any class"""
+            pass
+
+        def do_create(self, args):
+            """ Create an object of any class"""
+            try:
+                if not args:
+                    raise SyntaxError()
+                arg_list = args.split(" ")
+                kw = {}
+                for arg in arg_list[1:]:
+                    arg_splited = arg.split("=")
+                    arg_splited = eval(arg_splited[1])
+                    if type(arg_splited[1] is str:
+                        arg_splited[1] = arg_splited[1].replace("_", " ").replace

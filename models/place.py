@@ -2,10 +2,10 @@
 """This is the place class"""
 from sqlalchemy.ext.declarative import declarative_base
 from models.base_model import BaseModel, Base
-from sqlalchemy import Column Table, String, Integer, Float, ForeignKey
+from sqlalchemy import Column, Table, String, Integer, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from os import getenv
-from models
+import models
 
 
 place_amenity = Table("place_amenity", Base.metadata,
@@ -14,7 +14,7 @@ place_amenity = Table("place_amenity", Base.metadata,
                              primary_key=True,
                              nullable=False),
                       Column("amenity_id", String(60),
-                             ForeignKey("amenites.id")
+                             ForeignKey("amenites.id"),
                              primary_key=True,
                              nullable=False))
 
@@ -41,7 +41,7 @@ class Place(BaseModel, Base):
     description = Column(String(1024))
     number_rooms = Column(Integer, nullable=False, default=0)
     number_bathrooms = Column(Integer, nullable=False, default=0)
-    max_guest = Column(Integer, nullable=False, default-0)
+    max_guest = Column(Integer, nullable=False, default=0)
     price_by_night = Column(Integer, nullable=False, default=0)
     latitude = Column(Float)
     longitude = Column(Float)

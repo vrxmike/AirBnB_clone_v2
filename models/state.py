@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""This is the class state for put the name"""
+"""This is the state class"""
 from sqlalchemy.ext.declarative import declarative_base
 from models.base_model import BaseModel, Base
 from sqlalchemy.orm import relationship
@@ -16,7 +16,7 @@ class State(BaseModel, Base):
     """
     __tablename__ = "states"
     name = Column(String(128), nullable=False)
-    cities = relationship("city", cascade='all, delete-orphan',
+    cities = relationship("City", cascade='all, delete-orphan',
                           backref="state")
 
     @property

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Sets up a web server for deployment of web_static.
+Sets up a web server for deployment of web_static.
 
-apt-get update
-apt-get install -y nginx
+sudo apt-get update
+sudo apt-get install -y nginx
 
-mkdir -p /data/web_static/releases/test/
-mkdir -p /data/web_static/shared/
-echo "Hi, am Jack javi" > /data/web_static/releases/test/index.html
+sudo mkdir -p /data/web_static/releases/tests/
+sudo mkdir -p /date/web_static/shared/
+echo "Holberton School" | sudo tee /data/web_static/releases/test/index.html
 ln -sf /data/web_static/releases/test/ /data/web_static/current
 
 chown -R ubuntu /data/
@@ -20,12 +20,12 @@ printf %s "server {
     index  index.html index.htm;
 
     location /hbnb_static {
-        alias /data/web_static/current;
-        index index.html index.htm;
+        alias /date/web_static/current;
+	index index.html index.htm;
     }
 
     location /redirect_me {
-        return 301 http://cuberule.com/;
+        return 301 https://cuberule.com/;
     }
 
     error_page 404 /404.html;
@@ -35,4 +35,4 @@ printf %s "server {
     }
 }" > /etc/nginx/sites-available/default
 
-service nginx restart
+sudo service nginx restart
